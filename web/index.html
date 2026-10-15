@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#123F36">
+  <meta name="theme-color" content="#2C3930">
   <title>Chamada</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,21 +15,36 @@
   <main class="workspace" aria-label="Chamada">
     <header class="call-header">
       <div class="room-tools">
-        <label for="room-input">Código da sala</label>
-        <div class="room-input-wrap">
-          <input id="room-input" type="text" maxlength="32" autocomplete="off" spellcheck="false" aria-label="Código da sala">
-          <button id="generate-button" type="button" title="Gerar código" aria-label="Gerar código"><span class="icon" data-icon="shuffle"></span></button>
-          <button id="copy-button" type="button" title="Copiar convite" aria-label="Copiar convite"><span class="icon" data-icon="copy"></span></button>
+        <div class="identity-field">
+          <label for="name-input">Seu nome</label>
+          <input id="name-input" type="text" maxlength="32" autocomplete="name" placeholder="Como devemos chamar você?" aria-label="Seu nome">
+        </div>
+        <div class="room-field">
+          <label for="room-input">Código da sala</label>
+          <div class="room-input-wrap">
+            <input id="room-input" type="text" maxlength="32" autocomplete="off" spellcheck="false" aria-label="Código da sala">
+            <button id="generate-button" type="button" title="Gerar código" aria-label="Gerar código"><span class="icon" data-icon="shuffle"></span></button>
+            <button id="copy-button" type="button" title="Copiar convite" aria-label="Copiar convite"><span class="icon" data-icon="copy"></span></button>
+          </div>
         </div>
       </div>
-      <div class="call-meta">
-        <div class="participant-count" aria-label="Pessoas na sala">
-          <span class="icon" data-icon="people" aria-hidden="true"></span>
-          <strong id="participant-count">0/5</strong>
+      <div class="header-right">
+        <div class="theme-picker" role="group" aria-label="Escolher tema de cores">
+          <button class="theme-option" type="button" data-theme="default" aria-label="Tema atual" aria-pressed="true"><span class="theme-swatch" aria-hidden="true"></span><span>Tema 1</span></button>
+          <button class="theme-option" type="button" data-theme="theme-1" aria-label="Tema 1" aria-pressed="false"><span class="theme-swatch" aria-hidden="true"></span><span>Tema 2</span></button>
+          <button class="theme-option" type="button" data-theme="theme-2" aria-label="Tema 2" aria-pressed="false"><span class="theme-swatch" aria-hidden="true"></span><span>Tema 3</span></button>
+          <button class="theme-option" type="button" data-theme="theme-3" aria-label="Tema 3" aria-pressed="false"><span class="theme-swatch" aria-hidden="true"></span><span>Tema 4</span></button>
         </div>
-        <div class="connection-state" id="connection-state" role="status" aria-live="polite">
-          <span class="state-dot"></span><span id="state-label">Pronto</span>
+        <div class="call-meta">
+          <div class="participant-count" aria-label="Pessoas na sala">
+            <span class="icon" data-icon="people" aria-hidden="true"></span>
+            <strong id="participant-count">0/5</strong>
+          </div>
+          <div class="connection-state" id="connection-state" role="status" aria-live="polite">
+            <span class="state-dot"></span><span id="state-label">Pronto</span>
+          </div>
         </div>
+        <div class="participant-list" id="participant-list" role="list" aria-label="Participantes da sala"></div>
       </div>
     </header>
 
@@ -38,6 +53,7 @@
       <video id="remote-video" class="remote-video" autoplay playsinline hidden></video>
       <audio id="remote-audio" autoplay></audio>
       <div class="remote-placeholder" id="remote-placeholder" hidden><span id="remote-label">Aguardando amigo</span></div>
+      <button class="fullscreen-button" id="fullscreen-button" type="button" aria-label="Expandir vídeo para tela cheia" hidden><span class="icon" data-icon="expand"></span><span>Tela cheia</span></button>
       <div class="local-tile" id="local-tile" hidden>
         <video id="local-video" autoplay muted playsinline></video>
       </div>

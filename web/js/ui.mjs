@@ -1,5 +1,10 @@
 export const elements = {
+  nameInput: document.querySelector('#name-input'),
   roomInput: document.querySelector('#room-input'),
+  stage: document.querySelector('#stage'),
+  fullscreenButton: document.querySelector('#fullscreen-button'),
+  themeOptions: [...document.querySelectorAll('.theme-option')],
+  participantList: document.querySelector('#participant-list'),
   joinButton: document.querySelector('#join-button'),
   generateButton: document.querySelector('#generate-button'),
   copyButton: document.querySelector('#copy-button'),
@@ -23,7 +28,8 @@ const icons = {
   hangup: '<path d="M4.5 15.5a12 12 0 0 1 15 0l-2.2 3.1a1 1 0 0 1-1.3.3l-2.4-1.3a1 1 0 0 1-.5-1v-1.1a10 10 0 0 0-2.2 0v1.1a1 1 0 0 1-.5 1L8 18.9a1 1 0 0 1-1.3-.3Z"/>',
   shuffle: '<path d="m18 14 4 4-4 4m0-20 4 4-4 4M2 18h2.5a6 6 0 0 0 4.2-1.7l6.6-6.6A6 6 0 0 1 19.5 8H22M2 6h2.5a6 6 0 0 1 4.2 1.7l1.3 1.3m4 4 1.3 1.3a6 6 0 0 0 4.2 1.7H22"/>',
   copy: '<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',
-  people: '<path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2m6-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm6-7.8a4 4 0 0 1 0 7.6m2 4.2a4 4 0 0 1 2 3.5V21"/>'
+  people: '<path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2m6-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm6-7.8a4 4 0 0 1 0 7.6m2 4.2a4 4 0 0 1 2 3.5V21"/>',
+  expand: '<path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/>'
 };
 
 // Desenha o SVG correspondente em cada elemento marcado com data-icon.
@@ -59,4 +65,16 @@ export function setState(label, mode = '') {
 // Atualiza a quantidade de participantes conectados à sala.
 export function setParticipantCount(count) {
   elements.participantCount.textContent = `${count}/5`;
+}
+
+// Atualiza os nomes visíveis sem interpretar texto de participantes como HTML.
+export function setParticipants(participants) {
+  elements.participantList.replaceChildren(...participants.map(({ name, isLocal }) => {
+    const chip = document.createElement('span');
+    chip.className = 'participant-chip';
+    chip.setAttribute('role', 'listitem');
+    chip.textContent = isLocal ? `${name} (você)` : name;
+    chip.title = chip.textContent;
+    return chip;
+  }));
 }

@@ -1,46 +1,64 @@
-# La Noches
+# Tela
 
-Aplicativo web para compartilhar a tela e o áudio capturado em uma sala com até cinco pessoas. Não solicita webcam nem microfone. O servidor Go serve a interface e encaminha a sinalização; a captura é enviada diretamente entre os navegadores via WebRTC.
+## 1. O que a aplicação faz
 
-## Rodar localmente
+Permite compartilhar a tela e, quando disponível, o áudio do sistema com até quatro espectadores. Cada pessoa informa um nome, pode escolher um tema de cores e quem assiste pode expandir o vídeo para tela cheia. Não usa webcam nem microfone.
 
-1. Instale Go 1.22 ou mais recente.
-2. Na pasta do projeto, execute `go mod tidy` e depois `go run .`.
-3. Abra `http://localhost:8080` em até cinco navegadores para testar localmente.
-4. Gere um código de sala e compartilhe o convite. A primeira pessoa que entrar compartilha a tela; até quatro pessoas podem entrar como espectadoras.
+## 2. Como funciona
 
-O compartilhamento de tela funciona em `localhost` sem HTTPS. Ao escolher a tela, habilite a opção de compartilhar o áudio do sistema. O suporte à captura de áudio varia entre navegadores e tipos de compartilhamento; alguns oferecem apenas o áudio de uma aba.
+O servidor Go mantém as salas e encaminha a sinalização entre os navegadores. A tela e o áudio são transmitidos diretamente do computador que compartilha para os espectadores via WebRTC. Para acesso pela internet, o `cloudflared` cria um endereço HTTPS temporário que encaminha a conexão ao servidor local. Não é necessário abrir portas no roteador.
 
-## Acessar de outro computador
+O computador que compartilha precisa manter o programa aberto durante a chamada. O link do Tunnel deixa de funcionar quando a janela é encerrada.
 
-Para compartilhar uma sala pela internet, instale o **Cloudflare Tunnel (`cloudflared`) no computador que está rodando o projeto**. Ele fornece um endereço HTTPS público e encaminha a conexão até o servidor local; não é necessário abrir portas no roteador.
+## 3. Dependências
 
-### Iniciar com um comando no Windows
+- **Go 1.22 ou mais recente**, instalado e disponível no `PATH`.
+- **Cloudflare Tunnel (`cloudflared`)**, instalado e disponível no `PATH`.
 
-Com Go 1.22+ e `cloudflared` instalados e disponíveis no PATH, abra o PowerShell na pasta do projeto e execute:
+No Windows, instale o `cloudflared` pelo CMD com:
 
-```powershell
-.\start.ps1
-```
-
-O script inicia `go run .`, aguarda o servidor responder, inicia o Tunnel e mostra o endereço público. Deixe a janela aberta enquanto usar a chamada; `Ctrl+C` encerra os dois processos. Se o PowerShell bloquear a execução do script, use `powershell -ExecutionPolicy Bypass -File .\start.ps1`.
-
-No Windows, instale com:
-
-```powershell
+```cmd
 winget install --id Cloudflare.cloudflared
 ```
 
-Se preferir iniciar manualmente, mantenha o projeto rodando com `go run .` e, em outro terminal, execute:
+Após instalar, abra um novo CMD para que ele reconheça os programas no `PATH`.
 
-```powershell
+## 4. Como inicializar
+
+Execute os comandos a partir da pasta do projeto.
+
+### Manualmente
+
+Em um CMD, inicie o servidor:
+
+```cmd
+go run .
+```
+
+Para testar no próprio computador, abra `http://localhost:8080`. Para criar um link de acesso pela internet, abra um segundo CMD e rode:
+
+```cmd
 cloudflared tunnel --url http://localhost:8080
 ```
 
-O terminal mostrará um endereço temporário `https://...trycloudflare.com`. Abra esse endereço e compartilhe o convite da sala gerado nele. O processo do Tunnel precisa continuar aberto durante a chamada; se for encerrado, o endereço para de funcionar. Para desenvolvimento e testes, o Tunnel rápido não exige conta Cloudflare. Para um endereço estável e uso permanente, configure um Tunnel nomeado seguindo a [documentação oficial do Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/).
+Use o endereço `https://...trycloudflare.com` que aparecer no terminal.
 
-## Rede e privacidade
+### Pelo CMD usando `start.ps1`
 
-O áudio compartilhado e a tela são enviados diretamente entre o host e cada espectador. O servidor Go não recebe nem grava essas mídias. Como o host envia a captura separadamente para até quatro espectadores, o uso de banda de upload aumenta com o número de pessoas. A conexão usa um servidor STUN público para descoberta de rota. Algumas redes, VPNs ou firewalls bloqueiam conexões diretas; para cobertura confiável pela internet, configure um servidor TURN e adicione suas credenciais em `web/js/call.mjs`, em `iceServers`.
+Este comando inicia o servidor e o Tunnel juntos:
 
-Este MVP permite até cinco pessoas por sala e ainda não inclui autenticação, gravação ou implantação HTTPS automática. Use códigos de sala difíceis de adivinhar ao expor o servidor publicamente.
+```cmd
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\start.ps1"
+```
+
+Use o link exibido no terminal e mantenha a janela aberta durante a chamada.
+
+### Pelo executável
+
+Para gerar `iniciar.exe`, rode uma vez no CMD:
+
+```cmd
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\build-launcher.ps1"
+```
+
+Depois, dê dois cliques em `iniciar.exe`. O CMD exibirá o link do Tunnel; mantenha a janela aberta durante a chamada. O executável depende de `start.ps1` e dos outros arquivos do projeto na mesma pasta. Para movê-lo, copie a pasta completa. Go e `cloudflared` também precisam estar instalados e no `PATH`.

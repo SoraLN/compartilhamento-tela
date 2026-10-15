@@ -43,3 +43,21 @@ func TestLeavePromotesNextParticipant(t *testing.T) {
 		t.Fatalf("got host %q, want %q", hostID, second.id)
 	}
 }
+
+func TestCleanParticipantName(t *testing.T) {
+	tests := []struct {
+		name string
+		want string
+	}{
+		{name: "  Alice  ", want: "Alice"},
+		{name: "   ", want: "Anônimo"},
+		{name: "A\nlice", want: "Alice"},
+		{name: "123456789012345678901234567890123", want: "12345678901234567890123456789012"},
+	}
+
+	for _, test := range tests {
+		if got := cleanParticipantName(test.name); got != test.want {
+			t.Errorf("cleanParticipantName(%q) = %q, want %q", test.name, got, test.want)
+		}
+	}
+}

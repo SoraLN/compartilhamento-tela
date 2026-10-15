@@ -1,4 +1,4 @@
-import { elements as ui, setParticipantCount, setState, showToast } from './ui.mjs';
+import { elements as ui, setParticipantCount, setParticipants, setState, showToast } from './ui.mjs';
 import { cleanRoomCode } from './room.mjs';
 
 let localStream;
@@ -7,8 +7,10 @@ let localID = '';
 let hostID = '';
 let callRole = '';
 let activeRoom = '';
+let localName = '';
 let pendingRoomSignals = [];
 const participants = new Set();
+const participantNames = new Map();
 const peerConnections = new Map();
 const pendingCandidates = new Map();
 
@@ -52,6 +54,7 @@ function showEmptyStage() {
   ui.emptyState.hidden = false;
   ui.remotePlaceholder.hidden = true;
   ui.remoteVideo.hidden = true;
+  ui.fullscreenButton.hidden = true;
 }
 
 // Mostra o estado de espera sem sobrepor o ícone vazio.
@@ -59,12 +62,24 @@ function showWaitingStage(label) {
   ui.emptyState.hidden = true;
   ui.remoteVideo.hidden = true;
   ui.remotePlaceholder.hidden = false;
+  ui.fullscreenButton.hidden = true;
   ui.remoteLabel.textContent = label;
 }
 
 // Atualiza o número de pessoas presentes com o limite da sala.
 function updateParticipantCount(count) {
   setParticipantCount(count);
+}
+
+function updateParticipantNames() {
+  if (!localID) {
+    setParticipants([]);
+    return;
+  }
+  setParticipants([
+    { name: localName, isLocal: true },
+    ...[...participants].map((id) => ({ name: participantNames.get(id) || 'Participante', isLocal: false }))
+  ]);
 }
 
 // Atualiza o estado visual conforme as conexões WebRTC ativas.
@@ -103,6 +118,7 @@ function handleRemoteTrack(peerID, event) {
     ui.remoteVideo.hidden = false;
     ui.remotePlaceholder.hidden = true;
     ui.emptyState.hidden = true;
+    ui.fullscreenButton.hidden = false;
   }
   if (event.track.kind === 'audio') {
     ui.remoteAudio.srcObject = event.streams[0];
@@ -177,7 +193,13 @@ async function handleSignal(message) {
     hostID = message.hostId;
     callRole = localID === hostID ? 'host' : 'viewer';
     participants.clear();
+    participantNames.clear();
     (message.peers || []).forEach(addParticipant);
+    (message.members || []).forEach((participant) => {
+      if (participant.id && participant.name) participantNames.set(participant.id, participant.name);
+    });
+    participantNames.set(localID, localName);
+    updateParticipantNames();
     updateParticipantCount(message.count || participants.size + 1);
     showRoom();
     ui.joinButton.querySelector('span:last-child').textContent = callRole === 'host' ? 'Selecionando tela…' : 'Na chamada';
@@ -192,6 +214,8 @@ async function handleSignal(message) {
   if (message.type === 'peer-joined') {
     if (!message.id || message.id === localID) return;
     participants.add(message.id);
+    participantNames.set(message.id, message.name || 'Participante');
+    updateParticipantNames();
     updateParticipantCount(message.count || participants.size + 1);
     if (callRole === 'host' && localStream) {
       ui.remoteLabel.textContent = 'Conectando à tela';
@@ -237,6 +261,8 @@ async function handleSignal(message) {
 
   if (message.type === 'peer-left') {
     participants.delete(message.id);
+    participantNames.delete(message.id);
+    updateParticipantNames();
     updateParticipantCount(message.count ?? participants.size + 1);
     closePeerConnection(message.id);
     pendingCandidates.delete(message.id);
@@ -341,6 +367,13 @@ function closeAllPeerConnections() {
 export async function startCall() {
   if (ui.joinButton.disabled || socket) return;
 
+  localName = ui.nameInput.value.trim();
+  if (!localName) {
+    showToast('Digite seu nome antes de entrar na chamada.');
+    ui.nameInput.focus();
+    return;
+  }
+
   const room = cleanRoomCode(ui.roomInput.value);
   if (room.length < 3) {
     showToast('Use um código com pelo menos 3 caracteres.');
@@ -350,11 +383,12 @@ export async function startCall() {
 
   activeRoom = room;
   ui.joinButton.disabled = true;
+  ui.nameInput.disabled = true;
   ui.joinButton.querySelector('span:last-child').textContent = 'Conectando…';
   setState('Conectando', 'waiting');
   try {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    socket = new WebSocket(`${protocol}//${window.location.host}/ws?room=${encodeURIComponent(room)}`);
+    socket = new WebSocket(`${protocol}//${window.location.host}/ws?room=${encodeURIComponent(room)}&name=${encodeURIComponent(localName)}`);
     socket.onmessage = handleSocketMessage;
     socket.onclose = handleSocketClose;
     socket.onerror = handleSocketError;
@@ -384,10 +418,14 @@ export async function endCall() {
   hostID = '';
   callRole = '';
   activeRoom = '';
+  localName = '';
   participants.clear();
+  participantNames.clear();
   pendingRoomSignals = [];
   updateParticipantCount(0);
+  updateParticipantNames();
   ui.joinButton.disabled = false;
+  ui.nameInput.disabled = false;
   ui.joinButton.querySelector('span:last-child').textContent = 'Entrar na chamada';
   ui.localVideo.srcObject = null;
   ui.remoteVideo.srcObject = null;
