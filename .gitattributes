@@ -1,0 +1,3 @@
+# Excluir JavaScript das estatísticas de linguagens do GitHub
+*.js linguist-detectable=false
+*.jsx linguist-detectable=false
